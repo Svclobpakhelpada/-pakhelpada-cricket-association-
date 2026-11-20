@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Pakhelpada Cricket Association</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#f1f5f9;
+color:#172033;
+}
+header{
+background:#064e3b;
+color:white;
+text-align:center;
+padding:30px 10px;
+}
+header h1{margin:5px}
+nav{
+background:#022c22;
+padding:15px;
+text-align:center;
+position:sticky;
+top:0;
+}
+nav a{
+color:white;
+text-decoration:none;
+margin:8px;
+font-weight:bold;
+}
+.hero{
+background:linear-gradient(120deg,#064e3b,#10b981);
+color:white;
+padding:45px 20px;
+text-align:center;
+}
+.container{
+max-width:1000px;
+margin:auto;
+padding:15px;
+}
+.card{
+background:white;
+padding:20px;
+margin:18px 0;
+border-radius:12px;
+box-shadow:0 3px 10px #0001;
+}
+button{
+background:#059669;
+color:white;
+border:0;
+padding:12px 18px;
+border-radius:6px;
+cursor:pointer;
+margin:5px;
+}
+input,select{
+width:100%;
+padding:12px;
+margin:7px 0;
+border:1px solid #ccc;
+border-radius:6px;
+}
+.score{
+font-size:27px;
+font-weight:bold;
+color:#047857;
+}
+footer{
+background:#022c22;
+color:white;
+text-align:center;
+padding:25px;
+}
+table{
+width:100%;
+border-collapse:collapse;
+}
+td,th{
+border:1px solid #ddd;
+padding:10px;
+text-align:center;
+}
+[hidden]{display:none!important}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🏏 PAKHELPADA</h1>
+<h2>CRICKET ASSOCIATION</h2>
+<p>Official Website | PPL</p>
+</header>
+
+<nav>
+<a href="#home">Home</a>
+<a href="#live">Live Score</a>
+<a href="#ppl">PPL</a>
+<a href="#teams">Teams</a>
+<a href="#players">Players</a>
+<a href="#points">Points Table</a>
+<a href="#admin">Admin</a>
+</nav>
+
+<div class="hero" id="home">
+<h1>PAKHELPADA PREMIER LEAGUE</h1>
+<h2>🏆 PPL SEASON 1</h2>
+<p>8 Teams | 120 Players | One Champion</p>
+</div>
+
+<div class="container">
+
+<section class="card" id="live">
+<h2>🔴 LIVE CRICKET SCORE</h2>
+<div id="scores">Loading...</div>
+</section>
+
+<section class="card" id="ppl">
+<h2>🏆 PPL Tournament</h2>
+<p>Total Teams: 8</p>
+<p>Players Per Team: 15</p>
+<p>Total Players: 120</p>
+<p>Format: Group A & Group B</p>
+</section>
+
+<section class="card" id="teams">
+<h2>👥 PPL Teams</h2>
+<div id="teamList">Loading Teams...</div>
+</section>
+
+<section class="card" id="players">
+<h2>🏏 Players</h2>
+<select id="playerTeam" onchange="loadPlayers()">
+<option value="">Select Team</option>
+</select>
+<div id="playerList"></div>
+</section>
+
+<section class="card" id="points">
+<h2>📊 Points Table</h2>
+<p>Points table will be updated as match results are entered.</p>
+<div id="pointsTable"></div>
+</section>
+
+<section class="card" id="admin">
+<h2>🔐 Admin Panel</h2>
+
+<input id="email" type="email" placeholder="Admin Email">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+<button onclick="logout()">Logout</button>
+
+<p id="message"></p>
+
+<div id="adminPanel" hidden>
+
+<hr>
+
+<h3>Add Team</h3>
+<input id="teamName" placeholder="Team Name">
+<input id="captain" placeholder="Captain Name">
+<button onclick="addTeam()">Add Team</button>
+
+<hr>
+
+<h3>Add Player</h3>
+<select id="adminTeam">
+<option value="">Select Team</option>
+</select>
+<input id="playerName" placeholder="Player Name">
+<input id="playerRole" placeholder="Player Role">
+<button onclick="addPlayer()">Add Player</button>
+
+<hr>
+
+<h3>Create Match</h3>
+<input id="teamA" placeholder="Team A">
+<input id="teamB" placeholder="Team B">
+<button onclick="createMatch()">Create Match</button>
+
+<hr>
+
+<h3>Update Score</h3>
+<input id="matchId" type="number" placeholder="Match ID">
+<input id="runs" type="number" placeholder="Runs">
+<input id="wickets" type="number" placeholder="Wickets">
+<input id="overs" type="number" step="0.1" placeholder="Overs">
+
+<select id="matchStatus">
+<option>Live</option>
+<option>Completed</option>
+<option>Upcoming</option>
+</select>
+
+<button onclick="updateScore()">Update Score</button>
+
+</div>
+</section>
+
+</div>
+
+<footer>
+<h3>PAKHELPADA CRICKET ASSOCIATION</h3>
+<p>PAKHELPADA PREMIER LEAGUE</p>
+<p>© 2026 All Rights Reserved</p>
+</footer>
+
+<script>
+
+// SUPABASE CONNECTION
+const SUPABASE_URL="YOUR_SUPABASE_URL";
+const SUPABASE_KEY="YOUR_SUPABASE_PUBLISHABLE_KEY";
+
+const db=supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+// ADMIN LOGIN
+async function login(){
+
+const {error}=await db.auth.signInWithPassword({
+email:email.value,
+password:password.value
+});
+
+if(error){
+message.innerText=error.message;
+return;
+}
+
+await checkAdmin();
+}
+
+async function checkAdmin(){
+
+const {data}=await db.auth.getSession();
+
+if(data.session &&
+data.session.user.app_metadata.role==="admin"){
+
+adminPanel.hidden=false;
+message.innerText="Admin Login Successful";
+
+}else{
+
+adminPanel.hidden=true;
+message.innerText="Admin Permission Required";
+
+if(data.session) await db.auth.signOut();
+}
+}
+
+async function logout(){
+
+await db.auth.signOut();
+adminPanel.hidden=true;
+message.innerText="Logged Out";
+}
+
+// ADD TEAM
+async function addTeam(){
+
+const {data:teams}=await db
+.from("ppl_teams").select("id");
+
+if(teams.length>=8){
+alert("Maximum 8 teams allowed");
+return;
+}
+
+const {error}=await db.from("ppl_teams").insert({
+team_name:teamName.value,
+captain:captain.value
+});
+
+if(error) alert(error.message);
+else{
+alert("Team Added Successfully");
+loadTeams();
+}
+}
+
+// ADD PLAYER
+async function addPlayer(){
+
+const teamId=adminTeam.value;
+
+if(!teamId || !playerName.value){
+alert("Fill all details");
+return;
+}
+
+const {data:players,error:countError}=await db
+.from("ppl_players")
+.select("id")
+.eq("team_id",teamId);
+
+if(countError){
+alert(countError.message);
+return;
+}
+
+if(players.length>=15){
+alert("Maximum 15 players per team");
+return;
+}
+
+const {error}=await db.from("ppl_players").insert({
+team_id:teamId,
+player_name:playerName.value,
+role:playerRole.value
+});
+
+if(error) alert(error.message);
+else{
+alert("Player Added");
+loadPlayers();
+}
+}
+
+// CREATE MATCH
+async function createMatch(){
+
+const {error}=await db.from("ppl_matches").insert({
+team_a:teamA.value,
+team_b:teamB.value,
+status:"Upcoming"
+});
+
+if(error) alert(error.message);
+else{
+alert("Match Created");
+loadScores();
+}
+}
+
+// UPDATE SCORE
+async function updateScore(){
+
+const {error}=await db.from("ppl_matches").update({
+
+runs:Number(runs.value),
+wickets:Number(wickets.value),
+overs:Number(overs.value),
+status:matchStatus.value
+
+}).eq("id",matchId.value);
+
+if(error) alert(error.message);
+else{
+alert("Score Updated");
+loadScores();
+}
+}
+
+// LOAD TEAMS
+async function loadTeams(){
+
+const {data,error}=await db
+.from("ppl_teams")
+.select("*")
+.order("id");
+
+if(error) return;
+
+teamList.innerHTML=data.map(t=>`
+<div class="card">
+<h3>${escapeHTML(t.team_name)}</h3>
+<p>Captain: ${escapeHTML(t.captain||"Not Added")}</p>
+</div>
+`).join("") || "No Teams Added";
+
+playerTeam.innerHTML='<option value="">Select Team</option>';
+adminTeam.innerHTML='<option value="">Select Team</option>';
+
+data.forEach(t=>{
+playerTeam.innerHTML+=
+`<option value="${t.id}">${escapeHTML(t.team_name)}</option>`;
+
+adminTeam.innerHTML+=
+`<option value="${t.id}">${escapeHTML(t.team_name)}</option>`;
+});
+
+}
+
+// LOAD PLAYERS
+async function loadPlayers(){
+
+const id=playerTeam.value;
+
+if(!id){
+playerList.innerHTML="";
+return;
+}
+
+const {data,error}=await db
+.from("ppl_players")
+.select("*")
+.eq("team_id",id);
+
+if(error) return;
+
+playerList.innerHTML=data.map(p=>`
+<p>🏏 ${escapeHTML(p.player_name)} - ${escapeHTML(p.role||"Player")}</p>
+`).join("") || "No Players";
+}
+
+// LOAD SCORES
+async function loadScores(){
+
+const {data,error}=await db
+.from("ppl_matches")
+.select("*")
+.order("id",{ascending:false});
+
+if(error){
+scores.innerText=error.message;
+return;
+}
+
+scores.innerHTML=data.map(m=>`
+<div class="card">
+<h3>${escapeHTML(m.team_a)} VS ${escapeHTML(m.team_b)}</h3>
+<p class="score">${m.runs}/${m.wickets}</p>
+<p>Overs: ${m.overs}</p>
+<p>Status: ${escapeHTML(m.status)}</p>
+<p>Match ID: ${m.id}</p>
+</div>
+`).join("") || "No Matches Available";
+}
+
+function escapeHTML(value){
+return String(value).replace(/[&<>"']/g,c=>({
+'&':'&amp;',
+'<':'&lt;',
+'>':'&gt;',
+'"':'&quot;',
+"'":'&#39;'
+}[c]));
+}
+
+// REALTIME SCORE
+db.channel("ppl-live")
+.on("postgres_changes",{
+event:"*",
+schema:"public",
+table:"ppl_matches"
+},loadScores)
+.subscribe();
+
+async function start(){
+
+await checkAdmin();
+await loadTeams();
+await loadScores();
+
+}
+
+start();
+
+</script>
+
+</body>
+  </html>
